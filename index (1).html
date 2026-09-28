@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Рентополис</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0F1229;
+  --bg-grad:#151a3d;
+  --surface:#1D2150;
+  --surface-hi:#262b66;
+  --stroke:#33397a;
+  --stroke-soft:#262a5c;
+  --ink:#F3F4FF;
+  --ink-dim:#A6A9D9;
+  --ink-faint:#6E72AD;
+  --gold:#FFC94A;
+  --gold-ink:#241A02;
+  --gold-deep:#C98E12;
+  --mint:#46D9A6;
+  --mint-ink:#04241A;
+  --coral:#FF6B7A;
+  --coral-deep:#8f2c37;
+  --coral-ink:#3a0a10;
+  --diamond:#6FD3FF;
+  --diamond-deep:#1C6E93;
+  --diamond-ink:#062230;
+  --font-display:'Bungee','Arial Black',sans-serif;
+  --font-body:'Manrope','Segoe UI',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:radial-gradient(120% 140% at 15% -10%, var(--bg-grad) 0%, var(--bg) 55%);
+  color:var(--ink);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--diamond);outline-offset:2px;border-radius:6px}
+.app{display:flex;flex-direction:column;height:100%;max-width:520px;margin:0 auto}
+
+.topbar{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:6;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 18px 10px;background:rgba(15,18,41,.9);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--stroke-soft);
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{font-size:26px;line-height:1;flex:none}
+.brand-name{font-family:var(--font-display);font-size:15px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wallet{display:flex;gap:8px;flex:none}
+.pill{
+  display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;
+  font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.pill-coin{background:rgba(255,201,74,.14);color:var(--gold);border:1px solid rgba(255,201,74,.35)}
+.pill-diamond{background:rgba(111,211,255,.14);color:var(--diamond);border:1px solid rgba(111,211,255,.35)}
+
+.tabs{display:flex;gap:8px;padding:12px 18px 4px;background:var(--bg)}
+.tab-btn{
+  flex:1;padding:11px 10px;border-radius:12px;border:1px solid var(--stroke-soft);
+  background:var(--surface);color:var(--ink-dim);font-weight:700;font-size:14px;cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.tab-btn.active{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+
+.hint{padding:0 18px 8px;color:var(--ink-faint);font-size:12px;line-height:1.5}
+
+.board{flex:1;overflow-y:auto;padding:4px 18px 18px;display:flex;flex-direction:column;gap:12px}
+
+.tab-panel{display:flex;flex-direction:column;gap:12px}
+.tab-panel[hidden]{display:none}
+
+.empty{
+  border:1px dashed var(--stroke);border-radius:16px;padding:28px 18px;text-align:center;
+  color:var(--ink-dim);font-size:14px;line-height:1.6;display:flex;flex-direction:column;gap:12px;align-items:center;
+}
+.empty button{align-self:center}
+
+.card{
+  background:var(--surface);border:1px solid var(--stroke-soft);border-radius:16px;
+  padding:14px;display:flex;flex-direction:column;gap:10px;
+}
+.card-top{display:flex;align-items:center;gap:12px}
+.card-icon{
+  flex:none;width:46px;height:46px;border-radius:12px;background:var(--surface-hi);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+}
+.card-body{min-width:0;flex:1}
+.card-name{font-weight:800;font-size:15px}
+.card-sub{color:var(--ink-dim);font-size:12.5px;margin-top:2px;line-height:1.5}
+.card-sub b{color:var(--ink)}
+
+.row{display:flex;align-items:center;gap:10px}
+.spread{justify-content:space-between}
+.stack{display:flex;flex-direction:column;gap:8px}
+.divider{height:1px;background:var(--stroke-soft);margin:2px 0}
+
+.btn{
+  border:none;border-radius:11px;padding:11px 16px;font-weight:800;font-size:13.5px;
+  cursor:pointer;white-space:nowrap;transition:transform .08s,opacity .15s;
+}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-gold{background:var(--gold);color:var(--gold-ink)}
+.btn-mint{background:var(--mint);color:var(--mint-ink)}
+.btn-diamond{background:var(--diamond);color:var(--diamond-ink)}
+.btn-coral{background:var(--coral);color:var(--coral-ink)}
+.btn-ghost{background:var(--surface-hi);color:var(--ink);border:1px solid var(--stroke)}
+.btn-block{width:100%;flex:1}
+.btn-sm{padding:9px 12px;font-size:12.5px}
+
+.badge{
+  font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:.02em;flex:none;
+}
+.badge-owned{background:rgba(70,217,166,.15);color:var(--mint)}
+
+.progress-wrap{background:var(--surface-hi);border-radius:999px;height:9px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--diamond-deep),var(--diamond));border-radius:999px;transition:width .25s linear}
+
+.status-line{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.status-ready{color:var(--gold);font-weight:700}
+.warn-line{font-size:11.5px;color:var(--coral);line-height:1.4}
+
+.bottombar{
+  position:sticky;bottom:0;padding:12px 18px calc(14px + env(safe-area-inset-bottom,0px));
+  background:rgba(15,18,41,.92);backdrop-filter:blur(10px);border-top:1px solid var(--stroke-soft);
+  display:flex;flex-direction:column;gap:8px;
+}
+.bottombar-text{font-size:12.5px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.bottombar-text b{color:var(--ink)}
+
+.ad-modal{
+  position:fixed;inset:0;z-index:20;background:rgba(6,7,20,.82);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.ad-card{
+  background:var(--surface);border:1px solid var(--stroke);border-radius:18px;
+  padding:28px 22px;max-width:320px;width:100%;text-align:center;display:flex;flex-direction:column;gap:14px;
+}
+.ad-icon{font-size:40px}
+.ad-title{font-weight:800;font-size:16px}
+.ad-sub{color:var(--ink-dim);font-size:13px;line-height:1.5}
+.ad-progress{height:8px;border-radius:999px;background:var(--surface-hi);overflow:hidden}
+.ad-progress-bar{height:100%;background:linear-gradient(90deg,var(--coral-deep),var(--coral));width:0%;transition:width .1s linear}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">🏙️</span>
+      <span class="brand-name">Рентополис</span>
+    </div>
+    <div class="wallet">
+      <span class="pill pill-coin">🪙 <span id="coinVal">0</span></span>
+      <span class="pill pill-diamond">💎 <span id="diamondVal">0</span></span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="shop" type="button">Магазин</button>
+    <button class="tab-btn" data-tab="rent" type="button">Аренда</button>
+  </nav>
+  <p class="hint" id="tabHint">Покупай точки насовсем — доход они приносят только после оплаты аренды во вкладке «Аренда».</p>
+
+  <main class="board">
+    <section class="tab-panel" id="shopTab"></section>
+    <section class="tab-panel" id="rentTab" hidden></section>
+  </main>
+
+  <footer class="bottombar">
+    <div class="row spread">
+      <span class="bottombar-text">Точек: <b id="slotUsedVal">0</b>/<b id="slotLimitVal">5</b></span>
+      <button class="btn btn-diamond btn-sm" id="expandBtn" type="button">Слот — 💎 <span id="expandCost">15</span></button>
+    </div>
+    <button class="btn btn-ghost btn-block btn-sm" id="adEarnBtn" type="button">📺 Реклама — +1 💎 (осталось <span id="adLeftVal">10</span>/10)</button>
+  </footer>
+</div>
+
+<div class="ad-modal" id="adModal" hidden>
+  <div class="ad-card">
+    <div class="ad-icon">📺</div>
+    <div class="ad-title">Реклама идёт…</div>
+    <div class="ad-sub">В настоящем боте здесь покажется реклама Adsgram. Это макет — подожди пару секунд.</div>
+    <div class="ad-progress"><div class="ad-progress-bar" id="adProgressBar"></div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Инициализация Telegram Mini App — сообщаем клиенту, что страница готова, и разворачиваем на весь экран.
+  if(window.Telegram && window.Telegram.WebApp){
+    try{
+      var tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      if(typeof tg.requestFullscreen === 'function') tg.requestFullscreen();
+      if(typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
+    }catch(e){}
+  }
+
+  var TIERS = [
+    { id:'kiosk', name:'Ларёк',        icon:'🛒', cost:300,    incomeHr:100,    rentHrs:1, rentCost:20,     diamondCost:2 },
+    { id:'shop',  name:'Магазин',      icon:'🏬', cost:2500,   incomeHr:700,    rentHrs:2, rentCost:280,    diamondCost:4 },
+    { id:'cafe',  name:'Кафе',         icon:'☕', cost:16000,  incomeHr:4000,   rentHrs:3, rentCost:2400,   diamondCost:8 },
+    { id:'hotel', name:'Отель',        icon:'🏨', cost:90000,  incomeHr:20000,  rentHrs:4, rentCost:16000,  diamondCost:15 },
+    { id:'tower', name:'Бизнес-центр', icon:'🏢', cost:500000, incomeHr:100000, rentHrs:6, rentCost:120000, diamondCost:30 }
+  ];
+
+  var DEMO_HOUR = 20;        // секунд реального времени = 1 игровой час (демо-масштаб)
+  var SAVE_KEY = 'rentopolis_v4';
+  var OFFLINE_CAP_SEC = 600; // 10 минут реального времени — предел офлайн-досчёта
+
+  var INITIAL_SLOTS = 5;
+  var SLOT_COST_BASE = 15;
+  var SLOT_COST_STEP = 10;
+  var DAILY_AD_LIMIT = 10;
+  var SELL_REFUND_RATE = 0.5;
+
+  var state = {
+    coins: 350,
+    diamonds: 0,
+    slotLimit: INITIAL_SLOTS,
+    slotsBought: 0,
+    nextUid: 1,
+    properties: [],   // { uid, tierId, active, remaining, ready, adRentUsed, adSkipUsed }
+    adDay: '',
+    adCount: 0
+  };
+  var pendingAd = null;      // { type:'generic'|'rent'|'skip', uid }
+  var confirmSellUid = null; // transient UI state, not persisted
+
+  function byId(id){ return TIERS.filter(function(t){ return t.id===id; })[0]; }
+  function fullSec(tier){ return tier.rentHrs * DEMO_HOUR; }
+  function periodEarn(tier){ return tier.incomeHr * tier.rentHrs; }
+  function fmt(n){ return Math.floor(n).toLocaleString('ru-RU'); }
+  function mmss(sec){
+    sec = Math.max(0, Math.ceil(sec));
+    var m = Math.floor(sec/60), s = sec%60;
+    return m + ':' + (s<10?'0':'') + s;
+  }
+  function expandCost(){ return SLOT_COST_BASE + state.slotsBought * SLOT_COST_STEP; }
+  function today(){ return new Date().toDateString(); }
+  function ensureAdDay(){
+    var d = today();
+    if(state.adDay !== d){ state.adDay = d; state.adCount = 0; }
+  }
+  function adsLeft(){ ensureAdDay(); return Math.max(0, DAILY_AD_LIMIT - state.adCount); }
+
+  function loadSaved(){
+    try{
+      var raw = localStorage.getItem(SAVE_KEY);
+      if(!raw) return null;
+      return JSON.parse(raw);
+    }catch(e){ return null; }
+  }
+  function persist(){
+    try{
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        coins: state.coins, diamonds: state.diamonds,
+        slotLimit: state.slotLimit, slotsBought: state.slotsBought, nextUid: state.nextUid,
+        properties: state.properties, adDay: state.adDay, adCount: state.adCount,
+        lastSave: Date.now()
+      }));
+    }catch(e){}
+  }
+
+  function advance(dtSec){
+    state.properties.forEach(function(p){
+      if(p.active && !p.ready){
+        p.remaining -= dtSec;
+        if(p.remaining <= 0){ p.remaining = 0; p.ready = true; }
+      }
+    });
+  }
+
+  // ---- действия ----
+  function buy(tierId){
+    var t = byId(tierId);
+    if(!t) return;
+    if(state.properties.length >= state.slotLimit) return;
+    if(state.coins < t.cost) return;
+    state.coins -= t.cost;
+    state.properties.push({
+      uid: 'p' + (state.nextUid++), tierId: tierId,
+      active:false, remaining:0, ready:false,
+      adRentUsed:false, adSkipUsed:false
+    });
+    persist();
+    render();
+  }
+
+  function findProp(uid){ return state.properties.filter(function(p){ return p.uid===uid; })[0]; }
+
+  function payRentCoins(uid){
+    var p = findProp(uid);
+    if(!p || p.active || p.ready) return;
+    var t = byId(p.tierId);
+    if(state.coins < t.rentCost) return;
+    state.coins -= t.rentCost;
+    p.active = true; p.remaining = fullSec(t); p.ready = false;
+    persist();
+    render();
+  }
+
+  function payRentDiamonds(uid){
+    var p = findProp(uid);
+    if(!p || p.active || p.ready || !p.adRentUsed) return;
+    var t = byId(p.tierId);
+    if(state.diamonds < t.diamondCost) return;
+    state.diamonds -= t.diamondCost;
+    p.active = true; p.remaining = fullSec(t); p.ready = false;
+    persist();
+    render();
+  }
+
+  function skipWithDiamonds(uid){
+    var p = findProp(uid);
+    if(!p || !p.active || p.ready || !p.adSkipUsed) return;
+    var t = byId(p.tierId);
+    if(state.diamonds < t.diamondCost) return;
+    state.diamonds -= t.diamondCost;
+    p.remaining = 0; p.ready = true;
+    persist();
+    render();
+  }
+
+  function collect(uid){
+    var p = findProp(uid);
+    if(!p || !p.ready) return;
+    var t = byId(p.tierId);
+    state.coins += periodEarn(t);
+    p.active = false; p.ready = false; p.remaining = 0;
+    persist();
+    render();
+  }
+
+  function sell(uid){ confirmSellUid = uid; render(); }
+  function cancelSell(){ confirmSellUid = null; render(); }
+  function confirmSell(uid){
+    var p = findProp(uid);
+    if(!p) return;
+    var t = byId(p.tierId);
+    var refund = Math.floor(t.cost * SELL_REFUND_RATE);
+    state.coins += refund;
+    state.properties = state.properties.filter(function(x){ return x.uid !== uid; });
+    confirmSellUid = null;
+    persist();
+    render();
+  }
+
+  // ---- реклама ----
+  function openAd(type, uid){
+    if(adsLeft() <= 0) return;
+    pendingAd = { type:type, uid:uid };
+    var modal = document.getElementById('adModal');
+    var bar = document.getElementById('adProgressBar');
+    modal.hidden = false;
+    bar.style.width = '0%';
+    var start = Date.now(), dur = 3000;
+    var iv = setInterval(function(){
+      var pct = Math.min(100, ((Date.now()-start)/dur)*100);
+      bar.style.width = pct + '%';
+      if(pct >= 100){
+        clearInterval(iv);
+        modal.hidden = true;
+        finishAd(pendingAd);
+        pendingAd = null;
+      }
+    }, 60);
+  }
+
+  function finishAd(job){
+    ensureAdDay();
+    state.adCount += 1;
+    state.diamonds += 1;
+    if(job.type === 'rent'){
+      var p = findProp(job.uid);
+      if(p && !p.active && !p.ready && !p.adRentUsed){
+        var t = byId(p.tierId);
+        p.adRentUsed = true;
+        p.active = true; p.remaining = fullSec(t); p.ready = false;
+      }
+    } else if(job.type === 'skip'){
+      var p2 = findProp(job.uid);
+      if(p2 && p2.active && !p2.ready && !p2.adSkipUsed){
+        p2.adSkipUsed = true;
+        p2.remaining = 0; p2.ready = true;
+      }
+    }
+    persist();
+    render();
+  }
+
+  function expandSlot(){
+    var cost = expandCost();
+    if(state.diamonds < cost) return;
+    state.diamonds -= cost;
+    state.slotLimit += 1;
+    state.slotsBought += 1;
+    persist();
+    render();
+  }
+
+  // ---- рендер ----
+  function shopCardHTML(t){
+    var ownedCount = state.properties.filter(function(p){ return p.tierId===t.id; }).length;
+    var slotsFull = state.properties.length >= state.slotLimit;
+    var canBuy = !slotsFull && state.coins >= t.cost;
+    return (
+      '<div class="card">' +
+        '<div class="card-top">' +
+          '<div class="card-icon">'+t.icon+'</div>' +
+          '<div class="card-body">' +
+            '<div class="row spread">' +
+              '<span class="card-name">'+t.name+'</span>' +
+              (ownedCount>0 ? '<span class="badge badge-owned">У тебя: '+ownedCount+'</span>' : '') +
+            '</div>' +
+            '<div class="card-sub">Доход <b>'+fmt(t.incomeHr)+'</b> монет / '+t.rentHrs+'ч · аренда <b>'+fmt(t.rentCost)+'</b> монет</div>' +
+          '</div>' +
+        '</div>' +
+        '<button class="btn btn-gold btn-block" data-action="buy" data-id="'+t.id+'" '+(canBuy?'':'disabled')+'>' +
+          (slotsFull ? 'Нет свободных слотов' : 'Купить — '+fmt(t.cost)+' 🪙') +
+        '</button>' +
+      '</div>'
+    );
+  }
+
+  function sellFooterHTML(p, t){
+    if(confirmSellUid === p.uid){
+      var refund = Math.floor(t.cost * SELL_REFUND_RATE);
+      return (
+        '<div class="stack">' +
+          (p.active || p.ready ? '<div class="warn-line">Текущий цикл аренды сгорит.</div>' : '') +
+          '<div class="row">' +
+            '<button class="btn btn-ghost btn-block btn-sm" data-action="cancelSell">Отмена</button>' +
+            '<button class="btn btn-coral btn-block btn-sm" data-action="confirmSell" data-id="'+p.uid+'">Продать за '+fmt(refund)+' 🪙</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+    return '<button class="btn btn-ghost btn-block btn-sm" data-action="sell" data-id="'+p.uid+'">Продать участок</button>';
+  }
+
+  function rentCardHTML(p, index){
+    var t = byId(p.tierId);
+    var body;
+    if(p.ready){
+      body =
+        '<div class="status-line"><span class="status-ready">Аренда закончилась</span><span>+'+fmt(periodEarn(t))+' 🪙</span></div>' +
+        '<button class="btn btn-mint btn-block" data-action="collect" data-id="'+p.uid+'">Забрать '+fmt(periodEarn(t))+' монет</button>';
+    } else if(p.active){
+      var pct = 100 - (p.remaining / fullSec(t) * 100);
+      var left = adsLeft();
+      var skipBtn = !p.adSkipUsed
+        ? '<button class="btn btn-ghost btn-block" data-action="adskip" data-id="'+p.uid+'" '+(left<=0?'disabled':'')+'>📺 Пропустить за рекламу (1 раз)</button>'
+        : '<button class="btn btn-ghost btn-block" data-action="diaskip" data-id="'+p.uid+'" '+(state.diamonds<t.diamondCost?'disabled':'')+'>💎 Пропустить за '+t.diamondCost+'</button>';
+      body =
+        '<div class="progress-wrap"><div class="progress-bar" style="width:'+pct.toFixed(1)+'%"></div></div>' +
+        '<div class="status-line"><span>Осталось до сбора</span><span>'+mmss(p.remaining)+'</span></div>' +
+        skipBtn;
+    } else {
+      var rows = '<div class="card-sub">Оплати аренду — через '+t.rentHrs+'ч точка отдаст <b>'+fmt(periodEarn(t))+'</b> монет</div>';
+      rows += '<div class="stack">';
+      rows += '<button class="btn btn-gold btn-block" data-action="rentcoins" data-id="'+p.uid+'" '+(state.coins<t.rentCost?'disabled':'')+'>Оплатить — '+fmt(t.rentCost)+' 🪙</button>';
+      if(!p.adRentUsed){
+        rows += '<button class="btn btn-ghost btn-block" data-action="adrent" data-id="'+p.uid+'" '+(adsLeft()<=0?'disabled':'')+'>📺 Бесплатно за рекламу (1 раз)</button>';
+      } else {
+        rows += '<button class="btn btn-ghost btn-block" data-action="diarent" data-id="'+p.uid+'" '+(state.diamonds<t.diamondCost?'disabled':'')+'>💎 Оплатить алмазами — '+t.diamondCost+'</button>';
+      }
+      rows += '</div>';
+      body = rows;
+    }
+    return (
+      '<div class="card">' +
+        '<div class="card-top">' +
+          '<div class="card-icon">'+t.icon+'</div>' +
+          '<div class="card-body"><span class="card-name">'+t.name+(index>1?' №'+index:'')+'</span></div>' +
+        '</div>' +
+        body +
+        '<div class="divider"></div>' +
+        sellFooterHTML(p, t) +
+      '</div>'
+    );
+  }
+
+  function render(){
+    document.getElementById('coinVal').textContent = fmt(state.coins);
+    document.getElementById('diamondVal').textContent = fmt(state.diamonds);
+    document.getElementById('slotUsedVal').textContent = state.properties.length;
+    document.getElementById('slotLimitVal').textContent = state.slotLimit;
+    document.getElementById('expandCost').textContent = fmt(expandCost());
+    document.getElementById('expandBtn').disabled = state.diamonds < expandCost();
+    document.getElementById('adLeftVal').textContent = adsLeft();
+    document.getElementById('adEarnBtn').disabled = adsLeft() <= 0;
+
+    document.getElementById('shopTab').innerHTML = TIERS.map(shopCardHTML).join('');
+
+    var rentTab = document.getElementById('rentTab');
+    if(state.properties.length === 0){
+      rentTab.innerHTML =
+        '<div class="empty">Тут появятся твои точки после покупки.<button class="btn btn-gold" data-action="goShop" type="button">Перейти в магазин</button></div>';
+    } else {
+      var counters = {};
+      rentTab.innerHTML = state.properties.map(function(p){
+        counters[p.tierId] = (counters[p.tierId]||0) + 1;
+        return rentCardHTML(p, counters[p.tierId]);
+      }).join('');
+    }
+  }
+
+  function setTab(name){
+    confirmSellUid = null;
+    document.querySelectorAll('.tab-btn').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-tab') === name);
+    });
+    document.getElementById('shopTab').hidden = name !== 'shop';
+    document.getElementById('rentTab').hidden = name !== 'rent';
+    document.getElementById('tabHint').textContent = name === 'shop'
+      ? 'Точки покупаются насовсем, слоты ограничены — расширяй лимит алмазами внизу или продай ненужную точку во вкладке «Аренда».'
+      : 'Первая аренда и первый пропуск ожидания на точке — бесплатно за рекламу, дальше — за алмазы. Монеты работают всегда.';
+    render();
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(function(b){
+    b.addEventListener('click', function(){ setTab(b.getAttribute('data-tab')); });
+  });
+
+  document.getElementById('shopTab').addEventListener('click', handleClick);
+  document.getElementById('rentTab').addEventListener('click', handleClick);
+  function handleClick(e){
+    var el = e.target.closest('[data-action]');
+    if(!el) return;
+    var action = el.getAttribute('data-action');
+    var id = el.getAttribute('data-id');
+    if(action === 'buy') buy(id);
+    else if(action === 'rentcoins') payRentCoins(id);
+    else if(action === 'adrent') openAd('rent', id);
+    else if(action === 'diarent') payRentDiamonds(id);
+    else if(action === 'adskip') openAd('skip', id);
+    else if(action === 'diaskip') skipWithDiamonds(id);
+    else if(action === 'collect') collect(id);
+    else if(action === 'sell') sell(id);
+    else if(action === 'cancelSell') cancelSell();
+    else if(action === 'confirmSell') confirmSell(id);
+    else if(action === 'goShop') setTab('shop');
+  }
+  document.getElementById('expandBtn').addEventListener('click', expandSlot);
+  document.getElementById('adEarnBtn').addEventListener('click', function(){ openAd('generic', null); });
+
+  function tick(){ advance(0.25); persist(); render(); }
+
+  function start(){
+    var saved = loadSaved();
+    if(saved){
+      state.coins = saved.coins || 0;
+      state.diamonds = saved.diamonds || 0;
+      state.slotLimit = saved.slotLimit || INITIAL_SLOTS;
+      state.slotsBought = saved.slotsBought || 0;
+      state.nextUid = saved.nextUid || 1;
+      state.properties = saved.properties || [];
+      state.adDay = saved.adDay || '';
+      state.adCount = saved.adCount || 0;
+      if(saved.lastSave){
+        var elapsed = (Date.now() - saved.lastSave) / 1000;
+        elapsed = Math.min(elapsed, OFFLINE_CAP_SEC);
+        if(elapsed > 0) advance(elapsed);
+      }
+    }
+    ensureAdDay();
+    setTab('shop');
+    render();
+    persist();
+    setInterval(tick, 250);
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>
