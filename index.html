@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <style>
 :root{
   color-scheme: dark;
@@ -138,19 +139,6 @@ button{font-family:inherit}
 .bottombar-text{font-size:12.5px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
 .bottombar-text b{color:var(--ink)}
 
-.ad-modal{
-  position:fixed;inset:0;z-index:20;background:rgba(6,7,20,.82);
-  display:flex;align-items:center;justify-content:center;padding:20px;
-}
-.ad-card{
-  background:var(--surface);border:1px solid var(--stroke);border-radius:18px;
-  padding:28px 22px;max-width:320px;width:100%;text-align:center;display:flex;flex-direction:column;gap:14px;
-}
-.ad-icon{font-size:40px}
-.ad-title{font-weight:800;font-size:16px}
-.ad-sub{color:var(--ink-dim);font-size:13px;line-height:1.5}
-.ad-progress{height:8px;border-radius:999px;background:var(--surface-hi);overflow:hidden}
-.ad-progress-bar{height:100%;background:linear-gradient(90deg,var(--coral-deep),var(--coral));width:0%;transition:width .1s linear}
 </style>
 </head>
 <body>
@@ -187,15 +175,6 @@ button{font-family:inherit}
   </footer>
 </div>
 
-<div class="ad-modal" id="adModal" hidden>
-  <div class="ad-card">
-    <div class="ad-icon">📺</div>
-    <div class="ad-title">Реклама идёт…</div>
-    <div class="ad-sub">В настоящем боте здесь покажется реклама Adsgram. Это макет — подожди пару секунд.</div>
-    <div class="ad-progress"><div class="ad-progress-bar" id="adProgressBar"></div></div>
-  </div>
-</div>
-
 <script>
 (function(){
   "use strict";
@@ -209,6 +188,24 @@ button{font-family:inherit}
       if(typeof tg.requestFullscreen === 'function') tg.requestFullscreen();
       if(typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
     }catch(e){}
+  }
+
+  // Adsgram — настоящая реклама за вознаграждение. blockId из кабинета Adsgram.
+  var AdController = null;
+  try{
+    if(window.Adsgram && typeof window.Adsgram.init === 'function'){
+      AdController = window.Adsgram.init({ blockId: "50736" });
+    }
+  }catch(e){ AdController = null; }
+
+  function notify(msg){
+    try{
+      if(window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.showAlert === 'function'){
+        window.Telegram.WebApp.showAlert(msg);
+        return;
+      }
+    }catch(e){}
+    console.log(msg);
   }
 
   var TIERS = [
@@ -239,8 +236,8 @@ button{font-family:inherit}
     adDay: '',
     adCount: 0
   };
-  var pendingAd = null;      // { type:'generic'|'rent'|'skip', uid }
   var confirmSellUid = null; // transient UI state, not persisted
+  var adShowing = false;     // не даём открыть вторую рекламу поверх первой
 
   function byId(id){ return TIERS.filter(function(t){ return t.id===id; })[0]; }
   function fullSec(tier){ return tier.rentHrs * DEMO_HOUR; }
@@ -361,25 +358,23 @@ button{font-family:inherit}
     render();
   }
 
-  // ---- реклама ----
+  // ---- реклама (Adsgram) ----
   function openAd(type, uid){
+    if(adShowing) return;
     if(adsLeft() <= 0) return;
-    pendingAd = { type:type, uid:uid };
-    var modal = document.getElementById('adModal');
-    var bar = document.getElementById('adProgressBar');
-    modal.hidden = false;
-    bar.style.width = '0%';
-    var start = Date.now(), dur = 3000;
-    var iv = setInterval(function(){
-      var pct = Math.min(100, ((Date.now()-start)/dur)*100);
-      bar.style.width = pct + '%';
-      if(pct >= 100){
-        clearInterval(iv);
-        modal.hidden = true;
-        finishAd(pendingAd);
-        pendingAd = null;
-      }
-    }, 60);
+    if(!AdController){
+      notify('Реклама сейчас недоступна, попробуй чуть позже.');
+      return;
+    }
+    adShowing = true;
+    AdController.show().then(function(){
+      // пользователь досмотрел рекламу до конца — начисляем награду
+      adShowing = false;
+      finishAd({ type:type, uid:uid });
+    }).catch(function(){
+      // закрыл раньше времени или реклама не найдена — без награды
+      adShowing = false;
+    });
   }
 
   function finishAd(job){
